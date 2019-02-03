@@ -16,9 +16,8 @@ def reply_welcome(message):
     :param telegram.Message message: A message to which you must respond
     :rtype: telegram.Message Response message
     """
-    return message.reply_text(
-        'Для помощи обратитесь к команде /help, чтобы затрекать время '
-        'выберите команду /track')
+    return message.reply_text('Для помощи обратитесь к команде /help, чтобы затрекать время '
+                              'выберите команду /track')
 
 
 def reply_help(message):
@@ -39,8 +38,7 @@ def reply_start_redmine_settings(message):
     :param telegram.Message  message: A message to which you must respond
     :rtype: telegram.Message Response message
     """
-    return message.reply_text(
-        'Привет! Чтобы можно было воспользоватся ботом нужно его настроить')
+    return message.reply_text('Привет! Чтобы можно было воспользоватся ботом нужно его настроить')
 
 
 def reply_set_redmine_key(message):
@@ -59,9 +57,8 @@ def reply_invalid_redmine_key(message):
     :param telegram.Message  message: A message to which you must respond
     :rtype: telegram.Message Response message
     """
-    return message.reply_text(
-        'Меня не обмануть, введи правильный ключ. Для повторного ввода '
-        'используй команду /start')
+    return message.reply_text('Меня не обмануть, введи правильный ключ. Для повторного ввода '
+                              'используй команду /start')
 
 
 def reply_save_redmine_settings(message):
@@ -70,8 +67,7 @@ def reply_save_redmine_settings(message):
     :param telegram.Message  message: A message to which you must respond
     :rtype: telegram.Message Response message
     """
-    return message.reply_text(
-        'Настройки подключения к redmine успешно сохранены')
+    return message.reply_text('Настройки подключения к redmine успешно сохранены')
 
 
 def reply_start_time_entry(message):
@@ -80,8 +76,7 @@ def reply_start_time_entry(message):
     :param telegram.Message  message: A message to which you must respond
     :rtype: telegram.Message Response message
     """
-    return message.reply_text(
-        'Бот выручит тебя, только укажи куда мне затрекать время')
+    return message.reply_text('Бот выручит тебя, только укажи куда мне затрекать время')
 
 
 def reply_set_spent_on_time_entry(message, status):
@@ -118,8 +113,10 @@ def _print_status_entry_time(status):
 
 
 def _create_last_7_day_keyboard():
-    buttons = [InlineKeyboardButton(_russian_date(d), callback_data=str(d))
-               for d in _date_from_today(range(0, -8, -1))]
+    buttons = [
+        InlineKeyboardButton(_russian_date(d), callback_data=str(d))
+        for d in _date_from_today(range(0, -8, -1))
+    ]
     return InlineKeyboardMarkup(_build_menu(buttons, n_cols=2))
 
 
@@ -138,14 +135,12 @@ def edit_set_issue_time_entry(message, status, issues):
            'Но ты можешь отказатся от помощи, щелкнув на /cancel'
     text = text.format(_print_status_entry_time(status))
     reply_markup = _create_issue_keyboard(issues)
-    return message.bot.edit_message_text(text, chat_id=message.chat.id,
-                                         message_id=message.message_id,
-                                         reply_markup=reply_markup)
+    return message.bot.edit_message_text(
+        text, chat_id=message.chat.id, message_id=message.message_id, reply_markup=reply_markup)
 
 
 def _create_issue_keyboard(issues):
-    buttons = [InlineKeyboardButton(issue.name, callback_data=issue.id) for
-               issue in issues]
+    buttons = [InlineKeyboardButton(issue.name, callback_data=issue.id) for issue in issues]
     return InlineKeyboardMarkup(_build_menu(buttons, n_cols=1))
 
 
@@ -164,8 +159,8 @@ def edit_set_comment_time_entry(message, status):
            'Теперь нужно написать комментарий или ты можешь отказатся от ' \
            'помощи, щелкнув на /cancel'
     text = text.format(_print_status_entry_time(status))
-    return message.bot.edit_message_text(text, chat_id=message.chat.id,
-                                         message_id=message.message_id)
+    return message.bot.edit_message_text(
+        text, chat_id=message.chat.id, message_id=message.message_id)
 
 
 def delete_message(chat, message_id):
@@ -226,9 +221,8 @@ def edit_set_hours_time_entry(message, status, has_done_button=False):
            'Но ты можешь отказатся от помощи, щелкнув на /cancel'
     text = text.format(_print_status_entry_time(status))
     reply_markup = _create_hours_keyboard(has_done_button=has_done_button)
-    return message.bot.edit_message_text(text, chat_id=message.chat.id,
-                                         message_id=message.message_id,
-                                         reply_markup=reply_markup)
+    return message.bot.edit_message_text(
+        text, chat_id=message.chat.id, message_id=message.message_id, reply_markup=reply_markup)
 
 
 def edit_save_time_entry(message, status):
@@ -240,8 +234,8 @@ def edit_save_time_entry(message, status):
     """
     text = 'Бот выручит прямо сейчас:\n{}'
     text = text.format(_print_status_entry_time(status))
-    return message.bot.edit_message_text(text, chat_id=message.chat.id,
-                                         message_id=message.message_id)
+    return message.bot.edit_message_text(
+        text, chat_id=message.chat.id, message_id=message.message_id)
 
 
 def reply_cancel_time_entry(message):
@@ -250,8 +244,7 @@ def reply_cancel_time_entry(message):
     :param telegram.Message message: A message to which you must respond
     :rtype: telegram.Message message: Response message
     """
-    return message.reply_text(
-        'Бот пытался помочь, но не смог. Попробуй в следующий раз')
+    return message.reply_text('Бот пытался помочь, но не смог. Попробуй в следующий раз')
 
 
 def _build_menu(buttons, n_cols, header_buttons=None, footer_buttons=None):
@@ -272,7 +265,7 @@ def _date_from_today(range_):
     return [date.today() + timedelta(days=delta) for delta in range_]
 
 
-def _russian_date(date_: date):
+def _russian_date(date_):
     """Humanize a date in Russian.
 
     :param date date_:
@@ -284,11 +277,10 @@ def _russian_date(date_: date):
         return 'Вчера'
     if date_ == date.today() + date.resolution:
         return 'Завтра'
-    return '{} {} ({})'.format(date_.day, _russian_month(date_),
-                               _russian_weekday(date_))
+    return '{} {} ({})'.format(date_.day, _russian_month(date_), _russian_weekday(date_))
 
 
-def _russian_weekday(date_: date):
+def _russian_weekday(date_):
     """Humanize a weekday in Russian.
 
     :param date date_:
@@ -297,12 +289,13 @@ def _russian_weekday(date_: date):
     return ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'][date_.weekday()]
 
 
-def _russian_month(date_: date):
+def _russian_month(date_):
     """Humanize a month in Russian.
 
     :param date date_:
     :rtype: str
     """
-    months = ['Янв', 'Фев', 'Март', 'Апр', 'Май', 'Июнь', 'Июль', 'Авг', 'Сен',
-              'Окт', 'Ноя', 'Дек']
+    months = [
+        'Янв', 'Фев', 'Март', 'Апр', 'Май', 'Июнь', 'Июль', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'
+    ]
     return months[date_.month - 1]

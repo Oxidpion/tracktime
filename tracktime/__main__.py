@@ -19,20 +19,19 @@ import logging
 import os
 
 from sqlalchemy import create_engine
-from telegram import Bot, Update
 from telegram.ext import Updater
 
 from tracktime.bot import create_help_handler, create_setting_handler, create_tracktime_handler
 from tracktime.models import initialize_tables
 
 
-def __error(bot: Bot, update: Update, error):
+def __error(bot, update, error):
     """Log Errors caused by Updates."""
     logger = logging.getLogger(__name__)
     logger.warning('Update "%s" caused error "%s"', update, error)
 
 
-def run(config: dict):
+def run(config):
     """Run the application.
 
     :param config: Configuration dictionary.
@@ -67,14 +66,14 @@ def run(config: dict):
     engine = create_engine(config['dsn_db'], echo=True)
     initialize_tables(engine)
 
-    setting_handler = create_setting_handler(engine=engine,
-                                             start_command_name='start',
-                                             redmine_url=config['redmine_url'])
-    tracktime_handler = create_tracktime_handler(engine=engine,
-                                                 job_queue=updater.job_queue,
-                                                 redmine_url=config['redmine_url'],
-                                                 start_command_name='track',
-                                                 cancel_command_name='cancel')
+    setting_handler = create_setting_handler(
+        engine=engine, start_command_name='start', redmine_url=config['redmine_url'])
+    tracktime_handler = create_tracktime_handler(
+        engine=engine,
+        job_queue=updater.job_queue,
+        redmine_url=config['redmine_url'],
+        start_command_name='track',
+        cancel_command_name='cancel')
     help_handler = create_help_handler(command_name='help')
 
     dp = updater.dispatcher

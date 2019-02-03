@@ -70,8 +70,7 @@ def save_time_entry(state, redmine=None, engine=None):
         issue_id=state['issue_id'],
         spent_on=state['spent_on'],
         hours=state['hours'],
-        comments=state['comments']
-    )
+        comments=state['comments'])
     if not redmine.save_time_entry(time_entry):
         session.close()
         return False

@@ -2,9 +2,8 @@
 
 from datetime import datetime
 
-from sqlalchemy.engine import Engine
 from telegram.ext import CallbackQueryHandler, CommandHandler, \
-    ConversationHandler, Filters, JobQueue, MessageHandler, run_async
+    ConversationHandler, Filters, MessageHandler, run_async
 
 from tracktime.handlers import find_or_create_user, get_actual_issues, \
     save_time_entry, save_user_key
@@ -55,18 +54,12 @@ def create_setting_handler(engine, start_command_name, redmine_url):
 
     return ConversationHandler(
         entry_points=[CommandHandler(start_command_name, start)],
-        states={
-            SET_KEY: [MessageHandler(Filters.text, set_key)]
-        },
-        fallbacks=[]
-    )
+        states={SET_KEY: [MessageHandler(Filters.text, set_key)]},
+        fallbacks=[])
 
 
-def create_tracktime_handler(engine: Engine,
-                             job_queue: JobQueue,
-                             redmine_url: str,
-                             start_command_name: str,
-                             cancel_command_name: str):
+def create_tracktime_handler(engine, job_queue, redmine_url, start_command_name,
+                             cancel_command_name):
     """Create a handler to build and save a time entry.
 
     :param sqlalchemy.engine.Engine engine:  Engine database
@@ -161,25 +154,21 @@ def create_tracktime_handler(engine: Engine,
         return ConversationHandler.END
 
     return ConversationHandler(
-        entry_points=[
-            CommandHandler(start_command_name, start, pass_user_data=True)],
+        entry_points=[CommandHandler(start_command_name, start, pass_user_data=True)],
         states={
-            SPENT_ON: [
-                CallbackQueryHandler(spent_on, pattern=r"^\d{4}-\d{2}-\d{2}$",
-                                     pass_user_data=True)],
-            ISSUE: [CallbackQueryHandler(issue, pattern=r"^\d+$",
-                                         pass_user_data=True)],
-            COMMENTS: [
-                MessageHandler(Filters.text, comments, pass_user_data=True)],
+            SPENT_ON:
+            [CallbackQueryHandler(spent_on, pattern=r"^\d{4}-\d{2}-\d{2}$", pass_user_data=True)],
+            ISSUE: [CallbackQueryHandler(issue, pattern=r"^\d+$", pass_user_data=True)],
+            COMMENTS: [MessageHandler(Filters.text, comments, pass_user_data=True)],
             HOURS: [
-                CallbackQueryHandler(add_hours, pattern=r"^[\d.]+$",
-                                     pass_user_data=True),
-                CallbackQueryHandler(reset_hours, pattern=r"^Reset$",
-                                     pass_user_data=True)],
+                CallbackQueryHandler(add_hours, pattern=r"^[\d.]+$", pass_user_data=True),
+                CallbackQueryHandler(reset_hours, pattern=r"^Reset$", pass_user_data=True)
+            ],
         },
         fallbacks=[
             CallbackQueryHandler(done, pattern=r"^Done$", pass_user_data=True),
-            CommandHandler(cancel_command_name, cancel, pass_user_data=True)],
+            CommandHandler(cancel_command_name, cancel, pass_user_data=True)
+        ],
     )
 
 
@@ -188,6 +177,7 @@ def create_help_handler(command_name):
 
     :param str command_name: Command name in chat
     :return: Handler of Telegram
+
     """
     def help(bot, update):
         reply_help(update.message)

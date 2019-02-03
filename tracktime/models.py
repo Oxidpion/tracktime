@@ -68,8 +68,7 @@ class TimeEntry(Base):
         """Represent the time entry object."""
         return 'TimeEntry#{} {}h {}'.format(self.id, self.hours, self.spent_on)
 
-    def __init__(self, user=None, issue_id=None, spent_on=None, hours=None,
-                 comments=None):
+    def __init__(self, user=None, issue_id=None, spent_on=None, hours=None, comments=None):
         """Initialize object.
 
         :param User user: The user who owns the time entry
