@@ -105,7 +105,7 @@ def _print_status_entry_time(status):
     if 'issue_name' in status:
         message.append('Задача - {}'.format(status['issue_name']))
     if 'spent_on' in status:
-        message.append('Дата - {}'.format(russian_date(status['spent_on'])))
+        message.append('Дата - {}'.format(_russian_date(status['spent_on'])))
     if 'hours' in status:
         message.append('Часов - {}'.format(status['hours']))
     if 'comments' in status:
@@ -118,8 +118,8 @@ def _print_status_entry_time(status):
 
 
 def _create_last_7_day_keyboard():
-    buttons = [InlineKeyboardButton(russian_date(d), callback_data=str(d))
-               for d in date_from_today(range(0, -8, -1))]
+    buttons = [InlineKeyboardButton(_russian_date(d), callback_data=str(d))
+               for d in _date_from_today(range(0, -8, -1))]
     return InlineKeyboardMarkup(_build_menu(buttons, n_cols=2))
 
 
@@ -263,7 +263,7 @@ def _build_menu(buttons, n_cols, header_buttons=None, footer_buttons=None):
     return menu
 
 
-def date_from_today(range_):
+def _date_from_today(range_):
     """Generate dates by offset range in days the current day.
 
     :param range range_:
@@ -272,7 +272,7 @@ def date_from_today(range_):
     return [date.today() + timedelta(days=delta) for delta in range_]
 
 
-def russian_date(date_: date):
+def _russian_date(date_: date):
     """Humanize a date in Russian.
 
     :param date date_:
