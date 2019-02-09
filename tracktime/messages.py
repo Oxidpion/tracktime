@@ -140,7 +140,8 @@ def edit_set_issue_time_entry(message, status, issues):
 
 
 def _create_issue_keyboard(issues):
-    buttons = [InlineKeyboardButton(issue.name, callback_data=issue.id) for issue in issues]
+    buttons = [InlineKeyboardButton(issue.name, callback_data=issue.id) for issue in
+               issues.reverse()]
     return InlineKeyboardMarkup(_build_menu(buttons, n_cols=1))
 
 
