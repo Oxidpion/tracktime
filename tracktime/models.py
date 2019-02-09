@@ -68,15 +68,18 @@ class TimeEntry(Base):
         """Represent the time entry object."""
         return 'TimeEntry#{} {}h {}'.format(self.id, self.hours, self.spent_on)
 
-    def __init__(self, user=None, issue_id=None, spent_on=None, hours=None, comments=None):
+    def __init__(self, id=None, user=None, issue_id=None, spent_on=None, hours=None,
+                 comments=None):
         """Initialize object.
 
+        :param int id: ID in redmine
         :param User user: The user who owns the time entry
         :param int issue_id: ID issue on which to track time entry
         :param datetime.date spent_on: The date on which to track time entry
         :param float hours: Number of hours to track time entry
         :param str comments: Description of time entry
         """
+        self.id = id
         self.user = user
         self.issue_id = issue_id
         self.spent_on = spent_on

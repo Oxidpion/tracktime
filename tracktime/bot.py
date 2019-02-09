@@ -1,12 +1,12 @@
 """This module contains the functions for creating handlers for a Telegram."""
-
-from datetime import datetime
+import logging
+from datetime import date, datetime, timedelta
 
 from telegram.ext import CallbackQueryHandler, CommandHandler, \
     ConversationHandler, Filters, MessageHandler, run_async
 
-from tracktime.handlers import find_or_create_user, get_actual_issues, \
-    save_time_entry, save_user_key
+from tracktime.handlers import all_user_ids, find_or_create_user, get_actual_issues, \
+    save_time_entry, save_user_key, sync_user_with_redmine
 from tracktime.messages import delete_message, edit_save_time_entry, \
     edit_set_comment_time_entry, edit_set_hours_time_entry, \
     edit_set_issue_time_entry, reply_cancel_time_entry, reply_help, \
@@ -17,10 +17,11 @@ from tracktime.messages import delete_message, edit_save_time_entry, \
 from tracktime.redmine import RedmineWrapper
 
 
-def create_setting_handler(engine, start_command_name, redmine_url):
+def create_setting_handler(engine, job_queue, start_command_name, redmine_url):
     """Create a handler to configure the settings for the user.
 
     :param sqlalchemy.engine.Engine engine: Engine database
+    :param telegram.ext.JobQueue job_queue:
     :param str start_command_name: Start command name in the chat
     :param str redmine_url: Url redmine resources
     :return: Handler of Telegram
@@ -48,6 +49,7 @@ def create_setting_handler(engine, start_command_name, redmine_url):
             reply_invalid_redmine_key(update.message)
             return ConversationHandler.END
 
+        __sync_user(user_id, job_queue=job_queue, redmine=redmine, engine=engine)
         reply_save_redmine_settings(update.message)
         reply_welcome(update.message)
         return ConversationHandler.END
@@ -78,10 +80,13 @@ def create_tracktime_handler(engine, job_queue, redmine_url, start_command_name,
     def start(bot, update, user_data):
         reply_start_time_entry(update.message)
 
+        user_id = int(update.message.from_user.id)
         message = reply_set_spent_on_time_entry(update.message, {})
 
+        __sync_user_on_today(user_id, job_queue, redmine, engine)
+
         user_data['message_id'] = message.message_id
-        user_data['user_id'] = int(update.message.from_user.id)
+        user_data['user_id'] = user_id
         return SPENT_ON
 
     @run_async
@@ -156,8 +161,9 @@ def create_tracktime_handler(engine, job_queue, redmine_url, start_command_name,
     return ConversationHandler(
         entry_points=[CommandHandler(start_command_name, start, pass_user_data=True)],
         states={
-            SPENT_ON:
-            [CallbackQueryHandler(spent_on, pattern=r"^\d{4}-\d{2}-\d{2}$", pass_user_data=True)],
+            SPENT_ON: [
+                CallbackQueryHandler(spent_on, pattern=r"^\d{4}-\d{2}-\d{2}$", pass_user_data=True)
+            ],
             ISSUE: [CallbackQueryHandler(issue, pattern=r"^\d+$", pass_user_data=True)],
             COMMENTS: [MessageHandler(Filters.text, comments, pass_user_data=True)],
             HOURS: [
@@ -183,3 +189,70 @@ def create_help_handler(command_name):
         reply_help(update.message)
 
     return CommandHandler(command_name, help)
+
+
+def __sync_user(user_id, time_offset=0, job_queue=None, redmine=None, engine=None):
+    """Create a job to synchronize the user in Redmine with the database.
+
+    :param int user_id:
+    :param int time_offset:
+    :param telegram.ext.JobQueue job_queue:
+    :param tracktime.redmine.RedmineWrapper redmine:
+    :param sqlalchemy.engine.Engine engine:
+
+    """
+    logger = logging.getLogger(__name__)
+
+    @run_async
+    def sync_time_entries(bot, job):
+        logger.info('Start sync time entries for user {}'.format(user_id))
+        sync_user_with_redmine(user_id, redmine=redmine, engine=engine)
+        logger.info('Finish sync {}'.format(user_id))
+
+    job_name = 'sync_user_{}'.format(user_id)
+    if len(job_queue.get_jobs_by_name(job_name)) == 0:
+        job_queue.run_once(sync_time_entries, time_offset, name=job_name)
+
+
+def sync_daily_users(job_queue=None, redmine_url=None, engine=None):
+    """Create daily jobs to synchronize saved users in the database with Redmine.
+
+    :param telegram.ext.JobQueue job_queue:
+    :param str redmine_url:
+    :param sqlalchemy.engine.Engine engine:
+
+    """
+    redmine = RedmineWrapper(redmine_url)
+
+    @run_async
+    def sync_all_time_entries(bot, job):
+        time_offset = timedelta()
+        for user_id in all_user_ids(engine):
+            __sync_user(user_id, time_offset, job_queue, redmine, engine)
+            time_offset += timedelta(minutes=1)
+
+    job_queue.run_once(sync_all_time_entries, 0)
+    job_queue.run_daily(sync_all_time_entries, 0)
+
+
+def __sync_user_on_today(user_id, job_queue=None, redmine=None, engine=None):
+    """Create a job to partial synchronize the user for today in the database with Redmine.
+
+    :param int user_id:
+    :param telegram.ext.JobQueue job_queue:
+    :param tracktime.redmine.RedmineWrapper redmine:
+    :param sqlalchemy.engine.Engine engine:
+
+    """
+    logger = logging.getLogger(__name__)
+
+    @run_async
+    def sync_all_time_entries(bot, job):
+        logger.info('Start sync time entries on today for user {}'.format(user_id))
+        sync_user_with_redmine(user_id, date.today(), redmine, engine)
+        logger.info('Finish sync on today {}'.format(user_id))
+
+    job_name = 'sync_user_today_{}'.format(user_id)
+
+    if len(job_queue.get_jobs_by_name(job_name)) == 0:
+        job_queue.run_once(sync_all_time_entries, 0, name=job_name)

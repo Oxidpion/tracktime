@@ -21,8 +21,14 @@ import os
 from sqlalchemy import create_engine
 from telegram.ext import Updater
 
-from tracktime.bot import create_help_handler, create_setting_handler, create_tracktime_handler
+from tracktime.bot import create_help_handler, create_setting_handler, create_tracktime_handler, \
+    sync_daily_users
 from tracktime.models import initialize_tables
+
+logging.basicConfig(
+    format='%(asctime)s %(levelname)-8s %(message)s',
+    level=logging.INFO,
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 
 def __error(bot, update, error):
@@ -61,13 +67,18 @@ def run(config):
             }
         }
 
-    updater = Updater(config['token'], workers=1, request_kwargs=request_kwargs)
+    updater = Updater(config['token'], workers=4, request_kwargs=request_kwargs)
 
     engine = create_engine(config['dsn_db'], echo=True)
     initialize_tables(engine)
 
+    sync_daily_users(updater.job_queue, config['redmine_url'], engine)
+
     setting_handler = create_setting_handler(
-        engine=engine, start_command_name='start', redmine_url=config['redmine_url'])
+        engine=engine,
+        job_queue=updater.job_queue,
+        start_command_name='start',
+        redmine_url=config['redmine_url'])
     tracktime_handler = create_tracktime_handler(
         engine=engine,
         job_queue=updater.job_queue,
